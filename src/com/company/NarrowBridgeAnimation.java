@@ -12,7 +12,6 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,11 +24,12 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
     private List<Bus> busesWaiting = new LinkedList();
     private List<Bus> busesWaitingEast = new LinkedList();
     private List<Bus> busesWaitingWest = new LinkedList();
-    private int counterBuses;
+
     private List<Bus> busesOnTheBridge = new LinkedList();
 
     private JTextField bridgeField = new JTextField(30);
     private JTextField queueField = new JTextField(30);
+    private JTextField queueFieldWest = new JTextField(30);
     JTextArea textArea = new JTextArea(25, 50);
     public JComboBox<RestrictionType> limitComboBox = new JComboBox<RestrictionType>(RestrictionType.values());
 
@@ -54,22 +54,30 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
         sb.append("Bus[" + bus.getId() + "->" + bus.getDir() + "]  ");
         sb.append(message + "\n");
         textArea.insert(sb.toString(), 0);
-        sb = new StringBuilder();
-        Iterator iterator = this.busesWaiting.iterator();
 
-        Bus b;
-        while (iterator.hasNext()) {
-            b = (Bus) iterator.next();
+        printBusesWaiting();
+        printBusesOnBridge();
+    }
+
+    private void printBusesWaiting() {
+        StringBuilder sb = new StringBuilder();
+        for (Bus b : busesWaiting) {
             sb.append(b.getId());
             sb.append(" ");
         }
-
         queueField.setText(sb.toString());
-        sb = new StringBuilder();
-        iterator = busesOnTheBridge.iterator();
 
-        while (iterator.hasNext()) {
-            b = (Bus) iterator.next();
+        sb = new StringBuilder();
+        for (Bus b : busesWaitingWest) {
+            sb.append(b.getId());
+            sb.append(" ");
+        }
+        queueFieldWest.setText(sb.toString());
+    }
+
+    private void printBusesOnBridge() {
+        StringBuilder sb = new StringBuilder();
+        for (Bus b : busesOnTheBridge) {
             sb.append(b.getId());
             sb.append(" ");
         }
@@ -117,16 +125,17 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
         if (chosenBusDirection.equals(BusDirection.WEST)) {
 
             if (bus.getDir().equals(BusDirection.EAST)) {
-                addWaitBus(bus, busesWaitingEast);
+                addWaitBus(bus, busesWaiting);
             } else if (bus.getDir().equals(BusDirection.WEST)) {
                 busesOnTheBridge.add(bus);
-                counterBuses++;
                 printBridgeInfo(bus, "ON THE BRIDGE");
             }
-            if (counterBuses > 5) {
+            if (busesWaiting.size() >= 5) {
                 chosenBusDirection = BusDirection.EAST;
                 printInfo("CURRENT DIRECTION FOR NEW CREATED BUSES WILL BE-> EAST");
-                counterBuses = 0;
+                for(int i=0; i<5; i++){
+                    notify();
+                }
             }
         }
 
@@ -136,13 +145,14 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
                 addWaitBus(bus, busesWaitingWest);
             } else if (bus.getDir().equals(BusDirection.EAST)) {
                 busesOnTheBridge.add(bus);
-                counterBuses++;
                 printBridgeInfo(bus, "ON THE BRIDGE");
             }
-            if (counterBuses > 5) {
+            if (busesWaitingWest.size() >= 5) {
                 chosenBusDirection = BusDirection.WEST;
                 printInfo("CURRENT DIRECTION FOR NEW CREATED BUSES WILL BE -> WEST");
-                counterBuses = 0;
+                for(int i=0; i<5; i++){
+                    notify();
+                }
             }
         }
     }
@@ -162,7 +172,9 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
     public synchronized void getOffTheBridge(Bus bus) {
         busesOnTheBridge.remove(bus);
         printBridgeInfo(bus, "IS GETTING OFF THE BRIDGE");
-        notify();
+        if (!chosenLimitType.equals(RestrictionType.ONE_SIDE)) {
+            notify();
+        }
     }
 
     private NarrowBridgeAnimation() {
@@ -204,6 +216,7 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
         JLabel sliderLabel = new JLabel("Traffic intensity:");
         JLabel bridgeLabel = new JLabel("       On the bridge:");
         JLabel queueLabel = new JLabel("         Queue:");
+        JLabel queueLabelWest = new JLabel("     Queue west:");
         comboBoxLabel.setFont(font);
         comboBoxLabel.setForeground(Color.white);
         sliderLabel.setFont(font);
@@ -212,11 +225,15 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
         bridgeLabel.setForeground(Color.white);
         queueLabel.setFont(font);
         queueLabel.setForeground(Color.white);
+        queueLabelWest.setFont(font);
+        queueLabelWest.setForeground(Color.white);
         textArea.setFont(font);
         bridgeField.setFont(font);
         queueField.setFont(font);
+        queueFieldWest.setFont(font);
         bridgeField.setEditable(false);
         queueField.setEditable(false);
+        queueFieldWest.setEditable(false);
         textArea.setEditable(false);
 
         limitComboBox.addItemListener(this);
@@ -229,6 +246,8 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
         panel.add(bridgeField);
         panel.add(queueLabel);
         panel.add(queueField);
+        panel.add(queueLabelWest);
+        panel.add(queueFieldWest);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
         JScrollPane scroll_bars = new JScrollPane(textArea, 22, 30);
@@ -241,6 +260,5 @@ public class NarrowBridgeAnimation extends JFrame implements ItemListener {
     }
 
 }
-
 
 
